@@ -64,37 +64,37 @@ public class SubscriptionService {
         //In all other cases just try to upgrade the subscription and tell the difference of price that user has to pay
         //update the subscription in the repository
         User user = userRepository.findById(userId).get();
-        SubscriptionType subscriptionType = user.getSubscription().getSubscriptionType();
+        Subscription currentSubscription = user.getSubscription();
+        if(currentSubscription.getSubscriptionType() == SubscriptionType.ELITE)
+        {
+            throw new Exception("Already the best Subscription");
+        }
 
-        if(subscriptionType == SubscriptionType.ELITE) throw new Exception("Already the best Subscription");
+        int amountToBePaid = 0;
+        // if current subscription is pro (pro -> elite)
+        if(currentSubscription.getSubscriptionType() == SubscriptionType.PRO)
+        {
+            int currentAmount = currentSubscription.getTotalAmountPaid();
+            int amountNeedToUpgrade = 1000 + (350 * currentSubscription.getNoOfScreensSubscribed());
 
-        int amountTOBePaid = 0;
-        Subscription currSubscription = user.getSubscription();
-        // pro -> elite
-        if(subscriptionType == SubscriptionType.PRO){
-            int currAmount = currSubscription.getTotalAmountPaid();
-            int amountTOBeUpgrade = 1000 + (350 + currSubscription.getNoOfScreensSubscribed());
-
-            currSubscription.setSubscriptionType(SubscriptionType.ELITE);
-            currSubscription.setTotalAmountPaid(amountTOBeUpgrade);
-
-            amountTOBePaid = amountTOBeUpgrade - currAmount;
-
-            user.setSubscription(currSubscription);
+            currentSubscription.setSubscriptionType(SubscriptionType.ELITE);
+            currentSubscription.setTotalAmountPaid(amountNeedToUpgrade);
+            amountToBePaid = amountNeedToUpgrade - currentAmount;
+            user.setSubscription(currentSubscription);
             userRepository.save(user);
         }
-        else{ // basic -> PRO
-            int currAmount = currSubscription.getTotalAmountPaid();
-            int amountToUpgrade = 800 + (250 * currSubscription.getNoOfScreensSubscribed());
-            currSubscription.setSubscriptionType(SubscriptionType.PRO);
-            currSubscription.setTotalAmountPaid(amountToUpgrade);
+        else // if current subscription is basic (basic -> pro)
+        {
+            int currentAmount = currentSubscription.getTotalAmountPaid();
+            int amountNeedToUpgrade = 800 + (250 * currentSubscription.getNoOfScreensSubscribed());
 
-            amountTOBePaid = amountToUpgrade - currAmount;
-
-            user.setSubscription(currSubscription);
+            currentSubscription.setSubscriptionType(SubscriptionType.PRO);
+            currentSubscription.setTotalAmountPaid(amountNeedToUpgrade);
+            amountToBePaid = amountNeedToUpgrade - currentAmount;
+            user.setSubscription(currentSubscription);
             userRepository.save(user);
         }
-        return amountTOBePaid;
+        return amountToBePaid;
     }
 
     public Integer calculateTotalRevenueOfHotstar(){
